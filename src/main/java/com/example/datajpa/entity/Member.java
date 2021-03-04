@@ -12,10 +12,11 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Getter
+@Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(of = { "id", "username", "age" }) // 가급적이면 연관관계 필드는 toString에 포함시키지 말 것.
 public class Member {
