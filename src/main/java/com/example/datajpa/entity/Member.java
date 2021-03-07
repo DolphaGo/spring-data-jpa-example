@@ -42,6 +42,11 @@ public class Member {
         changeTeam(team);
     }
 
+    public Member(String username, int age) {
+        this.username = username;
+        this.age = age;
+    }
+
     public void changeTeam(Team team) {
         if (this.team != null) {
             team.getMembers().remove(this);
@@ -49,6 +54,8 @@ public class Member {
         this.team = team;
         team.getMembers().add(this);
     }
+
+
 
     // Setter보다 이게 더 낫다.
     public void changeUsername(String username) {
