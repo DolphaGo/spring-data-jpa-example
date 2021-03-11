@@ -12,7 +12,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.datajpa.dto.MemberDto;
 import com.example.datajpa.entity.Member;
+import com.example.datajpa.entity.Team;
 
 @SpringBootTest
 @Transactional
@@ -20,6 +22,8 @@ import com.example.datajpa.entity.Member;
 public class MemberRepositoryTest {
     @Autowired
     MemberRepository memberRepository;
+    @Autowired
+    TeamRepository teamRepository;
 
     @DisplayName("Member 테스트")
     @Test
@@ -64,12 +68,11 @@ public class MemberRepositoryTest {
 //        memberJpaRepository.delete(member2);
     }
 
-
     @DisplayName("findByUsernameAndAgeGreaterThen 테스트")
     @Test
     public void findByUsernameAndAgeGreaterThen() throws Exception {
-        Member m1 = new Member("aaa",10);
-        Member m2 = new Member("aaa",20);
+        Member m1 = new Member("aaa", 10);
+        Member m2 = new Member("aaa", 20);
         memberRepository.save(m1);
         memberRepository.save(m2);
 
@@ -97,5 +100,47 @@ public class MemberRepositoryTest {
         List<Member> aaa = memberRepository.findByUsername("AAA");
 
         assertEquals(10, aaa.get(0).getAge());
+    }
+
+    @DisplayName("레포지토리에 쿼리 정의 테스트")
+    @Test
+    public void query_test() throws Exception {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        List<Member> result = memberRepository.findUser("AAA", 10);
+        assertEquals(m1, result.get(0));
+    }
+
+    @DisplayName("findUsernameList 테스트")
+    @Test
+    public void find_username_list_query_test() throws Exception {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        List<String> usernameList = memberRepository.findUsernameList();
+        for (String s : usernameList) {
+            System.out.println("s = " + s);
+        }
+    }
+
+    @DisplayName("JPQL로 Dto로 받아오는 것 테스트")
+    @Test
+    public void findMemberDto() throws Exception {
+        Team team = new Team("teamA");
+        teamRepository.save(team);
+
+        Member member = new Member("aaa",10);
+        member.setTeam(team);
+        memberRepository.save(member);
+
+        List<MemberDto> memberDtos = memberRepository.findMemberDto();
+        for(MemberDto dto : memberDtos){
+            System.out.println("dto = " + dto);
+        }
     }
 }
