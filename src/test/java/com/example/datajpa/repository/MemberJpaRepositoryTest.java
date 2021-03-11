@@ -1,6 +1,7 @@
 package com.example.datajpa.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
@@ -67,15 +68,30 @@ class MemberJpaRepositoryTest {
     @DisplayName("findByUsernameAndAgeGreaterThen 테스트")
     @Test
     public void findByUsernameAndAgeGreaterThen() throws Exception {
-        Member m1 = new Member("aaa",10);
-        Member m2 = new Member("aaa",20);
+        Member m1 = new Member("aaa", 10);
+        Member m2 = new Member("aaa", 20);
         memberJpaRepository.save(m1);
         memberJpaRepository.save(m2);
 
-        List<Member> result = memberJpaRepository.findByUsernameAndAgeGreaterThen("aaa",15);
+        List<Member> result = memberJpaRepository.findByUsernameAndAgeGreaterThen("aaa", 15);
 
         assertThat(result.get(0).getUsername()).isEqualTo("aaa");
         assertThat(result.get(0).getAge()).isEqualTo(20);
         assertThat(result.size()).isEqualTo(1);
+    }
+
+    @DisplayName("NamedQueryTest")
+    @Test
+    public void named_query_test() throws Exception {
+
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberJpaRepository.save(m1);
+        memberJpaRepository.save(m2);
+
+        List<Member> aaa = memberJpaRepository.findByUsername("AAA");
+
+        assertEquals(10, aaa.get(0).getAge());
+
     }
 }

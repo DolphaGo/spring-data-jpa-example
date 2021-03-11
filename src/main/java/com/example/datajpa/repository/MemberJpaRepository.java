@@ -47,4 +47,12 @@ public class MemberJpaRepository {
                  .setParameter("age", age)
                  .getResultList();
     }
+
+
+    //NamedQuery는 실무에서 거의 쓰지 않는다.
+    public List<Member> findByUsername(String username) {
+        return em.createNamedQuery("Member.findByUsername", Member.class)
+                 .setParameter("username", username)
+                 .getResultList();
+    }
 }

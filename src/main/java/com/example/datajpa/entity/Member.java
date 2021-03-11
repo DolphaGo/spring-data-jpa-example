@@ -7,6 +7,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQuery;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -16,9 +17,14 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(of = { "id", "username", "age" }) // 가급적이면 연관관계 필드는 toString에 포함시키지 말 것.
+@NamedQuery(
+        name = "Member.findByUsername",
+        query = "select m from Member m where m.username = :username"
+)
 public class Member {
     @Id
     @GeneratedValue
@@ -54,8 +60,6 @@ public class Member {
         this.team = team;
         team.getMembers().add(this);
     }
-
-
 
     // Setter보다 이게 더 낫다.
     public void changeUsername(String username) {

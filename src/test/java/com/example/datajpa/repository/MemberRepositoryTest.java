@@ -1,6 +1,7 @@
 package com.example.datajpa.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
@@ -83,5 +84,18 @@ public class MemberRepositoryTest {
     @Test
     public void find_hello_by() throws Exception {
         List<Member> helloBy = memberRepository.findTop3HelloBy();
+    }
+
+    @DisplayName("NamedQuery 테스트")
+    @Test
+    public void named_query() throws Exception {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        List<Member> aaa = memberRepository.findByUsername("AAA");
+
+        assertEquals(10, aaa.get(0).getAge());
     }
 }
