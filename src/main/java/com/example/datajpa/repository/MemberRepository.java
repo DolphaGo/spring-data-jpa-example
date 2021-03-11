@@ -1,9 +1,13 @@
 package com.example.datajpa.repository;
 
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -52,4 +56,31 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     Optional<Member> findAaaaaaByUsername(String username); // 단건 Optional
 
+//    // paging (인터페이스만 있어도, 구현을 하지 않았음에도 페이징이 가능하다.)
+//    Page<Member> findByAge(int age, Pageable pageable); //pageable은 페이지에 대한 조건(여긴 1페이지야, 2페이지야..)
+
+//    Slice<Member> findByAge(int age, Pageable pageable);
+
+    /**
+     * @implNote : 그냥 카운트 쿼리는 join을 하고 있다.
+     *     select
+     *         count(member0_.member_id) as col_0_0_
+     *     from
+     *         member member0_
+     *     left outer join
+     *         team team1_
+     *             on member0_.team_id=team1_.team_id
+     */
+//    @Query(value = "select m from Member m left join m.team t")
+//    Page<Member> findByAge(int age, Pageable pageable);
+
+    /**
+     * @implNote : 여기서는 굳이 Join이 필요하지가 않는 Count이다.
+     * 따라서 카운트 쿼리를 분리해서 Member의 개수만 세준다.
+        select count(member0_.member_id) as col_0_0_ from member member0_
+     */
+    @Query(value = "select m from Member m left join m.team t", countQuery = "select count(m) from Member m")
+    Page<Member> findByAge(int age, Pageable pageable);
+
+    List<Member> findTop3ByAgeOrderByUsernameDesc(int age);
 }

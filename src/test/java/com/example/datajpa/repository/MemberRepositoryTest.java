@@ -11,6 +11,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -206,4 +210,125 @@ public class MemberRepositoryTest {
         aaaaaaaaaaaaaaa.ifPresent(System.out::println);
     }
 
+    @DisplayName("NamedQueryTest")
+    @Test
+    public void named_query_test() throws Exception {
+
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        List<Member> aaa = memberRepository.findByUsername("AAA");
+
+        assertEquals(10, aaa.get(0).getAge());
+
+    }
+
+    /**
+     * @implNote : 페이징은 딱 잘라서 가져오기에 최적화하기가 쉬운데 totalCount는 크기가 커지면 견적이 너무 커진다.
+     * 성능이 너무 저하되는 문제가 있는데(조인을 겁나 해서) 조인을 하지 않아도 되는 케이스가 많다.
+     * 그래서 countQuery를 분리하는 작업을 할 수 있습니다.
+     */
+    @DisplayName("페이징 테스트")
+    @Test
+    public void paging() throws Exception {
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        // spring-data-jpa는 page를 0부터 시작합니다! 1이 아니에요. 주의하세요!!
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Direction.DESC, "username"));
+        // 0페이지에서 3개가져와, 그리고 옵션으로 소팅도 하고 싶으면 소팅도 넣을 수 있다!
+
+        Page<Member> page = memberRepository.findByAge(age, pageRequest);
+
+        List<Member> content = page.getContent();
+        long totalElements = page.getTotalElements(); // 내부적으로 totalCount계산도 해주고 있다.
+        // select count(member0_.member_id) as col_0_0_ from member member0_ where member0_.age=10;
+
+        for (Member member : content) {
+            System.out.println("member = " + member);
+        }
+        System.out.println("total = " + totalElements);
+        // totalQuery를 날린 적도 없는데, totalQuery가 날라간다.
+
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getNumber()).isEqualTo(0);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.isFirst()).isTrue();
+        assertThat(page.hasNext()).isTrue();
+    }
+
+//    @DisplayName("슬라이스 테스트")
+//    @Test
+//    public void slice() throws Exception {
+//        memberRepository.save(new Member("member1", 10));
+//        memberRepository.save(new Member("member2", 10));
+//        memberRepository.save(new Member("member3", 10));
+//        memberRepository.save(new Member("member4", 10));
+//        memberRepository.save(new Member("member5", 10));
+//
+//        int age = 10;
+//        // spring-data-jpa는 page를 0부터 시작합니다! 1이 아니에요. 주의하세요!!
+//        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Direction.DESC, "username"));
+//        // 0페이지에서 3개가져와, 그리고 옵션으로 소팅도 하고 싶으면 소팅도 넣을 수 있다!
+//
+//        Slice<Member> page = memberRepository.findByAge(age, pageRequest);
+//
+//        List<Member> content = page.getContent();
+//        //slice는 토탈 개수를 몰라요. 알 필요가 없으니까 (더보기 버튼 눌러서 페이지 더 불러오고...)
+//
+//        for(Member member : content){
+//            System.out.println("member = "+ member);
+//        }
+//        assertThat(content.size()).isEqualTo(3);
+//        assertThat(page.getNumber()).isEqualTo(0);
+//        assertThat(page.isFirst()).isTrue();
+//        assertThat(page.hasNext()).isTrue();
+//    }
+
+    @DisplayName("단순하게 앞에거 3개만 가져올래")
+    @Test
+    public void getTop3() throws Exception {
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        // 페이지 쿼리 안쓰고 그냥 Top3를 해줘도 됩니다.
+        List<Member> list = memberRepository.findTop3ByAgeOrderByUsernameDesc(age);
+
+        for (Member member : list) {
+            System.out.println("member = " + member);
+        }
+    }
+
+    @DisplayName("Entity는 절대로 api쪽으로 바로 내보내서는 안됩니다.")
+    @Test
+    public void mapToDto() throws Exception {
+        Team team = new Team("teamA");
+        teamRepository.save(team);
+        Member member = new Member("member1", 10);
+        member.setTeam(team);
+        memberRepository.save(member);
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Direction.DESC, "username"));
+        Page<Member> page = memberRepository.findByAge(age, pageRequest);
+
+        // 다음과 같이 하면 page를 유지하면서 Dto로 반환할 수 있습니다.
+        Page<MemberDto> toMap = page.map(m -> new MemberDto(m.getId(), m.getUsername(), team.getName()));
+
+    }
 }
