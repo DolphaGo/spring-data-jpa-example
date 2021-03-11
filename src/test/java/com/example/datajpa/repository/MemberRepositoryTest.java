@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -157,6 +158,49 @@ public class MemberRepositoryTest {
         for (Member member : result) {
             System.out.println("member = " + member);
         }
+    }
+
+    @DisplayName("다양한 리턴타입 테스트")
+    @Test
+    public void retrunType_Test() throws Exception {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        List<Member> aaa = memberRepository.findListByUsername("AAA");
+        System.out.println("List ==>" + aaa.get(0).getUsername());
+        Member aaa1 = memberRepository.findOneMemberByUsername("AAA");
+        System.out.println("그냥 Member ==>" + aaa1.getUsername());
+        Optional<Member> aaa2 = memberRepository.findOptionalMemberByUsername("AAA");
+        System.out.println("Optional Member ==>" + aaa2.get().getUsername());
+
+        //없는 것을 찾으려고 할 때
+        List<Member> asdasdasd = memberRepository.findListByUsername("asdasd");
+        System.out.println("result = " + asdasdasd.size()); //없으면 empty Collection이 조회가 된다.
+
+        Member asdasdasd1 = memberRepository.findOneMemberByUsername("asdasd");
+        System.out.println("asdasdasd1 = " + asdasdasd1); // null이 출력된다.
+        // jpa는 없으면 NoResultException이 터지는데, spring-data-jpa는 이걸 try~catch로 감싸가지고 null로 반환합니다. (이게 jpa랑 다른 점)
+        // 근데 이건 논쟁이 꽤 있었는데, 이제 자바8이 생기면서 Optional이 생겨나면서 이에 대한 논쟁이 사라짐
+
+        Optional<Member> asdasdasd2 = memberRepository.findOptionalMemberByUsername("asdasdasd");
+        System.out.println("asdasdasd2 = " + asdasdasd2); // Optional.empty
+        // 데이터 조회했을 때 있을 수도, 없을 수도 있으니까 이럴 땐 Optional 쓰는 것이 맞습니다.
+
+        /*
+        근데, 2개가 있는데 하나만 조회할 땐 NonUniqueResultException이 터진다.
+         */
+        Member m3 = new Member("CCC", 10);
+        Member m4 = new Member("CCC", 20);
+        memberRepository.save(m3);
+        memberRepository.save(m4);
+
+        // NonUniqueResultException이 터지는데, spring-data-jpa가 이걸 spring의 Exception 이름인 IncorrectResultSizeDataAccessException로 변환한다!
+        // 스프링 추상화이기 때문에 다른 jpa 구현체를 써도, 이걸 사용하는 클라이언트 코드 쪽에서 예외를 또 고칠 필요가 없습니다.
+        // 그래서 이렇게 Exception을 한 번 변환해서 리턴해주고 있습니다.
+//        Member ccc = memberRepository.findOneMemberByUsername("CCC"); // NonUniqueResultException -> IncorrectResultSizeDataAccessException
+
     }
 
 }

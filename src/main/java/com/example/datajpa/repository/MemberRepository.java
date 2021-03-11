@@ -2,6 +2,7 @@ package com.example.datajpa.repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -40,4 +41,12 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     @Query("select m from Member m where m.username in :names")
     List<Member> findByNames(@Param("names") Collection<String> names);
+
+    /**
+     *  JPA는 다양한 반환 타입을 지원한다!!
+     */
+
+    List<Member> findListByUsername(String username); // 컬렉션
+    Member findOneMemberByUsername(String username); // 단건
+    Optional<Member> findOptionalMemberByUsername(String username); // 단건 Optional
 }
