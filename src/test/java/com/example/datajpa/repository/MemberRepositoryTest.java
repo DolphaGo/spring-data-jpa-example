@@ -201,6 +201,9 @@ public class MemberRepositoryTest {
         // 그래서 이렇게 Exception을 한 번 변환해서 리턴해주고 있습니다.
 //        Member ccc = memberRepository.findOneMemberByUsername("CCC"); // NonUniqueResultException -> IncorrectResultSizeDataAccessException
 
+//        메서드 이름을 이상하게 했을 때
+        Optional<Member> aaaaaaaaaaaaaaa = memberRepository.findAaaaaaByUsername("AAA");
+        aaaaaaaaaaaaaaa.ifPresent(System.out::println);
     }
 
 }

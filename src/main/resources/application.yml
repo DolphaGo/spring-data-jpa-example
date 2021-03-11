@@ -11,6 +11,9 @@ spring:
       ddl-auto: create
     properties:
       hibernate:
+#        Jpa는 타겟 데이터 베이스에 따라서 쿼리가 실행된다(by 방언)
+#        dialect: org.hibernate.dialect.Oracle10gDialect
+#        show_sql: true
         format_sql: true
 
 logging:
