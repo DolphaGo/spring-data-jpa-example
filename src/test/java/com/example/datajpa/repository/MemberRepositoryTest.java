@@ -3,6 +3,7 @@ package com.example.datajpa.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -134,13 +135,28 @@ public class MemberRepositoryTest {
         Team team = new Team("teamA");
         teamRepository.save(team);
 
-        Member member = new Member("aaa",10);
+        Member member = new Member("aaa", 10);
         member.setTeam(team);
         memberRepository.save(member);
 
         List<MemberDto> memberDtos = memberRepository.findMemberDto();
-        for(MemberDto dto : memberDtos){
+        for (MemberDto dto : memberDtos) {
             System.out.println("dto = " + dto);
         }
     }
+
+    @DisplayName("SQL in절 테스트, 리스트 객체도 파라미터 바인딩이 된다!")
+    @Test
+    public void findByNames() throws Exception {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        List<Member> result = memberRepository.findByNames(Arrays.asList("AAA", "BBB"));
+        for (Member member : result) {
+            System.out.println("member = " + member);
+        }
+    }
+
 }
