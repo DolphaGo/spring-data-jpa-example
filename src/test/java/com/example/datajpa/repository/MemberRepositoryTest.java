@@ -279,7 +279,7 @@ public class MemberRepositoryTest {
         Page<Member> page = memberRepository.findByAge(age, pageRequest);
         Page<MemberDto> mapPage = page.map(member -> new MemberDto(member.getId(), member.getUsername(), "TeamName"));
 
-        mapPage.forEach(m -> System.out.println("=================> "+m));
+        mapPage.forEach(m -> System.out.println("=================> " + m));
     }
 
     @DisplayName("슬라이스 테스트")
@@ -351,7 +351,41 @@ public class MemberRepositoryTest {
 
         // 다음과 같이 하면 page를 유지하면서 Dto로 반환할 수 있습니다.
         Page<MemberDto> toMap = page.map(m -> new MemberDto(m.getId(), m.getUsername(), team.getName()));
+    }
 
+    @DisplayName("벌크 업데이트")
+    @Test
+    void bulkUpdate() {
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 19));
+        memberRepository.save(new Member("member3", 20));
+        memberRepository.save(new Member("member4", 21));
+        memberRepository.save(new Member("member5", 40));
+
+        int resultCount = memberRepository.bulkUpdatePlus(20); // DB에는 member5가 41살로 업데이트가 되었을 것임
+        assertEquals(3, resultCount);
+
+        List<Member> member5 = memberRepository.findByUsername("member5"); // 이 결과가 41살일까, 40살일까?
+        System.out.println("member5 = " + member5.get(0));
+        assertEquals(41, member5.get(0).getAge()); // 그냥 하면 40 살이다. Why? 이게 벌크 연산에서 조심해야 한다. (영속 컨텍스트를 비워줘야한다.)
+        // save를 했을 때의 영속성 컨텍스트에 있는 40살을 가져오기 때문이다. (영속 컨텍스트에는 반영이 안됨)
+        // 40살인 쿼리가 있는데, 이거 영속 컨텍스트안에 있는 값을 가져와서
+        // 벌크 연산을 해서 DB에는 41, 영속 컨텍스트는 40이라서 40으로 출력이 되는 것이다.
+
+        /**
+         * jpa는 영속성 컨텍스트라는 개념이 있어서,
+         * 벌크 연산은 영속성 컨텍스트를 모르는 상태로 쿼리를 날려버림.
+         * 따라서 벌크 연산을 하고 나서는 영속성 컨텍스트를 다 날려야 합니다!!
+         * 어떻게요?
+         */
+    }
+    
+    @DisplayName("영속성 컨텍스트에 있는 것을 조회할 때 또 쿼리가 나갈까?")
+    @Test
+    void my_query_test(){
+        Member member1 = memberRepository.save(new Member("member1", 10));
+        List<Member> member11 = memberRepository.findByUsername("member1"); // PK로 찾으면 안나가고, 그 외는 나감. 그런다음 영속 컨텍스트와 비교함
+        System.out.println("member11 = " + member11);
     }
 
 }

@@ -111,8 +111,6 @@ class MemberJpaRepositoryTest {
         List<Member> members = memberJpaRepository.findByPage(age, offset, limit);
         long totalCount = memberJpaRepository.totalCount(age);
 
-
-
         // page 1 offset = 0, limit 10
         // page 2 offset = 10, limit 10
         // ...
@@ -124,5 +122,18 @@ class MemberJpaRepositoryTest {
 
         assertThat(members.size()).isEqualTo(3);
         assertThat(totalCount).isEqualTo(5);
+    }
+
+    @DisplayName("벌크 업데이트")
+    @Test
+    void bulkUpdate() {
+        memberJpaRepository.save(new Member("member1", 10));
+        memberJpaRepository.save(new Member("member2", 19));
+        memberJpaRepository.save(new Member("member3", 20));
+        memberJpaRepository.save(new Member("member4", 21));
+        memberJpaRepository.save(new Member("member5", 40));
+
+        int resultCount = memberJpaRepository.bulkAgePlus(20);
+        assertEquals(3, resultCount);
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -89,4 +90,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Slice<Member> findByAgeSlice(int age, Pageable pageable);
 
     List<Member> findTop3ByAgeOrderByUsernameDesc(int age);
+
+    // 벌크 업데이트 , clearAutomatically 옵션을 넣어주면, 벌크 업데이트 후 영속 컨텍스트를 비워주는 작업을 자동으로 해준다.
+    @Modifying(clearAutomatically = true) // 이게 꼭 필요함 (executeUpdate 처럼, 벌크성 업데이트를 위함)
+    @Query("update Member m set m.age = m.age +1 where m.age >= :age")
+    int bulkUpdatePlus(@Param("age") int age);
 }
