@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.test.annotation.Rollback;
@@ -264,33 +265,54 @@ public class MemberRepositoryTest {
         assertThat(page.hasNext()).isTrue();
     }
 
-//    @DisplayName("슬라이스 테스트")
-//    @Test
-//    public void slice() throws Exception {
-//        memberRepository.save(new Member("member1", 10));
-//        memberRepository.save(new Member("member2", 10));
-//        memberRepository.save(new Member("member3", 10));
-//        memberRepository.save(new Member("member4", 10));
-//        memberRepository.save(new Member("member5", 10));
-//
-//        int age = 10;
-//        // spring-data-jpa는 page를 0부터 시작합니다! 1이 아니에요. 주의하세요!!
-//        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Direction.DESC, "username"));
-//        // 0페이지에서 3개가져와, 그리고 옵션으로 소팅도 하고 싶으면 소팅도 넣을 수 있다!
-//
-//        Slice<Member> page = memberRepository.findByAge(age, pageRequest);
-//
-//        List<Member> content = page.getContent();
-//        //slice는 토탈 개수를 몰라요. 알 필요가 없으니까 (더보기 버튼 눌러서 페이지 더 불러오고...)
-//
-//        for(Member member : content){
-//            System.out.println("member = "+ member);
-//        }
-//        assertThat(content.size()).isEqualTo(3);
-//        assertThat(page.getNumber()).isEqualTo(0);
-//        assertThat(page.isFirst()).isTrue();
-//        assertThat(page.hasNext()).isTrue();
-//    }
+    @DisplayName("페이징 결과는 항상 DTO로 변환하여 클라이언트에 반환해야 한다.")
+    @Test
+    public void paging_to_dto() throws Exception {
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Direction.DESC, "username"));
+        Page<Member> page = memberRepository.findByAge(age, pageRequest);
+        Page<MemberDto> mapPage = page.map(member -> new MemberDto(member.getId(), member.getUsername(), "TeamName"));
+
+        mapPage.forEach(m -> System.out.println("=================> "+m));
+    }
+
+    @DisplayName("슬라이스 테스트")
+    @Test
+    public void slice() throws Exception {
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        // spring-data-jpa는 page를 0부터 시작합니다! 1이 아니에요. 주의하세요!!
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Direction.DESC, "username"));
+        // 0페이지에서 3개가져와, 그리고 옵션으로 소팅도 하고 싶으면 소팅도 넣을 수 있다!
+
+        Slice<Member> page = memberRepository.findByAgeSlice(age, pageRequest);
+        // 쿼리 결과 : select member0_.member_id as member_i1_0_, member0_.age as age2_0_, member0_.team_id as team_id4_0_, member0_.username as username3_0_ from member member0_ left outer join team team1_ on member0_.team_id=team1_.team_id order by member0_.username desc limit 4;
+        // 3개를 요청했지만, 1개 더(limit 4) 여유롭게 가져오는 것을 확인할 수 있다. 다음페이지가 있다면 [더보기]등을 지원하기 위함
+        // 그리고 TotalCount를 가져오지 않습니다.
+
+        List<Member> content = page.getContent();
+        //slice는 토탈 개수를 몰라요. 알 필요가 없으니까 (더보기 버튼 눌러서 페이지 더 불러오고...)
+        System.out.println("content.size() = " + content.size());
+
+        for (Member member : content) {
+            System.out.println("member = " + member);
+        }
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(page.getNumber()).isEqualTo(0);
+        assertThat(page.isFirst()).isTrue();
+        assertThat(page.hasNext()).isTrue();
+    }
 
     @DisplayName("단순하게 앞에거 3개만 가져올래")
     @Test
@@ -331,4 +353,5 @@ public class MemberRepositoryTest {
         Page<MemberDto> toMap = page.map(m -> new MemberDto(m.getId(), m.getUsername(), team.getName()));
 
     }
+
 }

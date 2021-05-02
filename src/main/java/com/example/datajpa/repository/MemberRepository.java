@@ -43,6 +43,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query("select new com.example.datajpa.dto.MemberDto(m.id, m.username, t.name) from Member m join m.team t")
     List<MemberDto> findMemberDto();
 
+    // 컬렉션 파라미터 바인딩!! in 절로 들어간다.
     @Query("select m from Member m where m.username in :names")
     List<Member> findByNames(@Param("names") Collection<String> names);
 
@@ -77,10 +78,15 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     /**
      * @implNote : 여기서는 굳이 Join이 필요하지가 않는 Count이다.
      * 따라서 카운트 쿼리를 분리해서 Member의 개수만 세준다.
+     * where절로 데이터를 필터링하지 않는다는 조건하에, left outer join이라면, 굳이 조인절을 섞을 필요가 없다.
+       그런 상황에서는 자동으로 짜주는 쿼리 대신에 count Query를 직접 좀 더 최적화 할 수 있다.
         select count(member0_.member_id) as col_0_0_ from member member0_
      */
     @Query(value = "select m from Member m left join m.team t", countQuery = "select count(m) from Member m")
     Page<Member> findByAge(int age, Pageable pageable);
+
+    @Query(value = "select m from Member m left join m.team t")
+    Slice<Member> findByAgeSlice(int age, Pageable pageable);
 
     List<Member> findTop3ByAgeOrderByUsernameDesc(int age);
 }

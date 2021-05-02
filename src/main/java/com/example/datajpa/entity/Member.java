@@ -30,7 +30,9 @@ public class Member {
     @GeneratedValue
     @Column(name = "member_id") //DB테이블을 위한 명시적인 이름 짓기
     private Long id;
+
     private String username;
+
     private int age;
 
     @ManyToOne(fetch = FetchType.LAZY)
