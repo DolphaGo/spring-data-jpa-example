@@ -1,13 +1,15 @@
 package com.example.datajpa.repository;
 
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import javax.persistence.NamedEntityGraph;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -53,7 +55,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
      */
 
     List<Member> findListByUsername(String username); // 컬렉션
+
     Member findOneMemberByUsername(String username); // 단건
+
     Optional<Member> findOptionalMemberByUsername(String username); // 단건 Optional
 
     Optional<Member> findAaaaaaByUsername(String username); // 단건 Optional
@@ -80,8 +84,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
      * @implNote : 여기서는 굳이 Join이 필요하지가 않는 Count이다.
      * 따라서 카운트 쿼리를 분리해서 Member의 개수만 세준다.
      * where절로 데이터를 필터링하지 않는다는 조건하에, left outer join이라면, 굳이 조인절을 섞을 필요가 없다.
-       그런 상황에서는 자동으로 짜주는 쿼리 대신에 count Query를 직접 좀 더 최적화 할 수 있다.
-        select count(member0_.member_id) as col_0_0_ from member member0_
+    그런 상황에서는 자동으로 짜주는 쿼리 대신에 count Query를 직접 좀 더 최적화 할 수 있다.
+    select count(member0_.member_id) as col_0_0_ from member member0_
      */
     @Query(value = "select m from Member m left join m.team t", countQuery = "select count(m) from Member m")
     Page<Member> findByAge(int age, Pageable pageable);
@@ -95,4 +99,18 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Modifying(clearAutomatically = true) // 이게 꼭 필요함 (executeUpdate 처럼, 벌크성 업데이트를 위함)
     @Query("update Member m set m.age = m.age +1 where m.age >= :age")
     int bulkUpdatePlus(@Param("age") int age);
+
+    @Override
+    @EntityGraph(attributePaths = "team")
+    List<Member> findAll();
+
+    @EntityGraph(attributePaths = { "team" })
+    @Query("select m from Member m")
+    List<Member> findMemberByUsername();
+
+    @EntityGraph(attributePaths = { "team" })
+    List<Member> findEntityGraphByUsername(@Param("username") String username);
+
+    @EntityGraph("Member.all")
+    List<Member> findNamedEntityGraphByUsername(@Param("username") String username);
 }

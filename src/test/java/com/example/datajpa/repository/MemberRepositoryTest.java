@@ -7,7 +7,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,6 +35,9 @@ public class MemberRepositoryTest {
     MemberRepository memberRepository;
     @Autowired
     TeamRepository teamRepository;
+
+    @PersistenceContext
+    EntityManager em;
 
     @DisplayName("Member 테스트")
     @Test
@@ -386,6 +393,147 @@ public class MemberRepositoryTest {
         Member member1 = memberRepository.save(new Member("member1", 10));
         List<Member> member11 = memberRepository.findByUsername("member1"); // PK로 찾으면 안나가고, 그 외는 나감. 그런다음 영속 컨텍스트와 비교함
         System.out.println("member11 = " + member11);
+    }
+    
+    @DisplayName("N+1문제")
+    @Nested
+    class N_Plus_one_problem {
+
+        @DisplayName("findAll 오버라이드해서 페치조인하기 전엔 N+1 문제가 있다.")
+        @Test
+        void n_plus_one_problem() {
+            Team teamA = new Team("teamA");
+            Team teamB = new Team("teamB");
+
+            teamRepository.save(teamA);
+            teamRepository.save(teamB);
+
+            Member member1 = new Member("member1", 10, teamA);
+            Member member2 = new Member("member2", 20, teamB);
+
+            memberRepository.save(member1);
+            memberRepository.save(member2);
+
+            em.flush();
+            em.clear();
+
+            // N+1 문제
+            List<Member> members = memberRepository.findAll();
+            for (Member member : members) {
+                System.out.println("member = " + member);
+                System.out.println("member.getTeam().getClass() = " + member.getTeam().getClass()); // 프록시
+                System.out.println("member.getTeam().getName() = " + member.getTeam().getName()); // 프록시 초기화
+            }
+        }
+
+        @DisplayName("findAll 오버라이드해서 페치조인 해버리기(페치조인은 EntityGraph로 구현)")
+        @Test
+        void find_all_override(){
+            Team teamA = new Team("teamA");
+            Team teamB = new Team("teamB");
+
+            teamRepository.save(teamA);
+            teamRepository.save(teamB);
+
+            Member member1 = new Member("member1", 10, teamA);
+            Member member2 = new Member("member2", 20, teamB);
+
+            memberRepository.save(member1);
+            memberRepository.save(member2);
+
+            em.flush();
+            em.clear();
+
+            // EntityGraph로 페치조인을 구현해놨기에 N+1 문제가 없다
+            List<Member> members = memberRepository.findAll();
+            for (Member member : members) {
+                System.out.println("member = " + member);
+                System.out.println("member.getTeam().getClass() = " + member.getTeam().getClass()); // 프록시가 아니다.
+                System.out.println("member.getTeam().getName() = " + member.getTeam().getName());
+            }
+        }
+        
+        @DisplayName("JPQL + FetchJoin(EntityGraph)")
+        @Test
+        void jpql_and_entity_graph(){
+            Team teamA = new Team("teamA");
+            Team teamB = new Team("teamB");
+
+            teamRepository.save(teamA);
+            teamRepository.save(teamB);
+
+            Member member1 = new Member("member1", 10, teamA);
+            Member member2 = new Member("member2", 20, teamB);
+
+            memberRepository.save(member1);
+            memberRepository.save(member2);
+
+            em.flush();
+            em.clear();
+
+            // EntityGraph로 페치조인을 구현해놨기에 N+1 문제가 없다 (jpql + entityGraph)
+            List<Member> members = memberRepository.findMemberByUsername();
+            for (Member member : members) {
+                System.out.println("member = " + member);
+                System.out.println("member.getTeam().getClass() = " + member.getTeam().getClass()); // 프록시가 아니다.
+                System.out.println("member.getTeam().getName() = " + member.getTeam().getName());
+            }
+        }
+
+        
+        @DisplayName("method 쿼리에 entitygraph 붙이기")
+        @Test
+        void method_query_plus_entitygraph(){
+            Team teamA = new Team("teamA");
+            Team teamB = new Team("teamB");
+
+            teamRepository.save(teamA);
+            teamRepository.save(teamB);
+
+            Member member1 = new Member("member1", 10, teamA);
+            Member member2 = new Member("member2", 20, teamB);
+
+            memberRepository.save(member1);
+            memberRepository.save(member2);
+
+            em.flush();
+            em.clear();
+
+            // EntityGraph로 페치조인을 구현해놨기에 N+1 문제가 없다
+            List<Member> members = memberRepository.findEntityGraphByUsername("member1");
+            for (Member member : members) {
+                System.out.println("member = " + member);
+                System.out.println("member.getTeam().getClass() = " + member.getTeam().getClass()); // 프록시가 아니다.
+                System.out.println("member.getTeam().getName() = " + member.getTeam().getName());
+            }
+        }
+
+        @DisplayName("NamedEntityGraph 사용")
+        @Test
+        void named_entitygraph(){
+            Team teamA = new Team("teamA");
+            Team teamB = new Team("teamB");
+
+            teamRepository.save(teamA);
+            teamRepository.save(teamB);
+
+            Member member1 = new Member("member1", 10, teamA);
+            Member member2 = new Member("member2", 20, teamB);
+
+            memberRepository.save(member1);
+            memberRepository.save(member2);
+
+            em.flush();
+            em.clear();
+
+            // EntityGraph로 페치조인을 구현해놨기에 N+1 문제가 없다
+            List<Member> members = memberRepository.findNamedEntityGraphByUsername("member1");
+            for (Member member : members) {
+                System.out.println("member = " + member);
+                System.out.println("member.getTeam().getClass() = " + member.getTeam().getClass()); // 프록시가 아니다.
+                System.out.println("member.getTeam().getName() = " + member.getTeam().getName());
+            }
+        }
     }
 
 }
