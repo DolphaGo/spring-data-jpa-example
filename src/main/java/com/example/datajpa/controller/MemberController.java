@@ -48,6 +48,15 @@ public class MemberController {
         return page;
     }
 
+    // 항상 API를 반환할 때는 DTO로 반환하라.
+    @GetMapping("/members2")
+    public Page<MemberDto> list2(@PageableDefault(size = 5) Pageable pageable) {
+        return memberRepository.findAll(pageable).map(MemberDto::new);
+    }
+    // 페이지 번호가 왜 0번부터냐? 1번부터 하고 싶다? -> 니가 커스텀하셈, 직접 만들어야함
+    // 또는 One-indexed-parameter 에 true를 준다. 이러면 0이나 1이나 동일한 결과를 내놓는데 한계가 있다.
+    // 어떤 한계냐면 페이지 객체 안의 숫자랑 안맞는다(Pageable안의 pageNumber와 커스텀한 페이지 번호와 같지 않다.)
+
     @PostConstruct
     public void init() {
         for (int i = 0; i < 1000; i++) {
