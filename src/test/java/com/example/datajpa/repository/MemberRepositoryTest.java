@@ -563,7 +563,7 @@ public class MemberRepositoryTest {
 
         @DisplayName("변경 감지 필요 없어, 조회용으로만 쓸거야")
         @Test
-        void queryHint2(){
+        void queryHint2() {
             // 나 100% 조회용으로만 쓸거야, 진짜
             Member member = new Member("member1", 10);
             memberRepository.save(member);
@@ -575,7 +575,32 @@ public class MemberRepositoryTest {
             findMember.setUsername("member2");
             em.flush();// 내부적으로 스냅샷을 뜨지 않아서 업데이트 쿼리가 안 나감
         }
+    }
 
+    @DisplayName("비관적 락")
+    @Test
+    void pessimist_lock() {
+        Member member = new Member("member1", 10);
+        memberRepository.save(member);
+        em.flush();
+        em.clear();
+
+        // select for update~
+        List<Member> lockByUsername = memberRepository.findLockByUsername(member.getUsername());
+        em.flush();
+        /** 쿼리 결과
+         *     select
+         *         member0_.member_id as member_i1_0_,
+         *         member0_.age as age2_0_,
+         *         member0_.team_id as team_id4_0_,
+         *         member0_.username as username3_0_
+         *     from
+         *         member member0_
+         *     where
+         *         member0_.username=? for update
+         */
+        // 실시간 트래픽이 많은 서비스에서는 비관락 사용 ㄴㄴ, 돈과 같이 엄청 중요한 것 아닌 이상.
+        // 실시간 서비스에서는 락을 건다면 낙관락으로 풀어가는 방법을 추천한다.
     }
 
 }
