@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.LockModeType;
-import javax.persistence.NamedEntityGraph;
 import javax.persistence.QueryHint;
 
 import org.springframework.data.domain.Page;
@@ -22,7 +21,7 @@ import org.springframework.data.repository.query.Param;
 import com.example.datajpa.dto.MemberDto;
 import com.example.datajpa.entity.Member;
 
-public interface MemberRepository extends JpaRepository<Member, Long> {
+public interface MemberRepository extends JpaRepository<Member, Long>, MemberRepositoryCustom {
     List<Member> findByUsernameAndAgeGreaterThan(String username, int age);
 
     List<Member> findTop3HelloBy(); // 이건 전체 조회(By 뒤에 아무것도 없어서)
