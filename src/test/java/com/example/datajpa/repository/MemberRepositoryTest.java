@@ -386,15 +386,15 @@ public class MemberRepositoryTest {
          * 어떻게요?
          */
     }
-    
+
     @DisplayName("영속성 컨텍스트에 있는 것을 조회할 때 또 쿼리가 나갈까?")
     @Test
-    void my_query_test(){
+    void my_query_test() {
         Member member1 = memberRepository.save(new Member("member1", 10));
         List<Member> member11 = memberRepository.findByUsername("member1"); // PK로 찾으면 안나가고, 그 외는 나감. 그런다음 영속 컨텍스트와 비교함
         System.out.println("member11 = " + member11);
     }
-    
+
     @DisplayName("N+1문제")
     @Nested
     class N_Plus_one_problem {
@@ -428,7 +428,7 @@ public class MemberRepositoryTest {
 
         @DisplayName("findAll 오버라이드해서 페치조인 해버리기(페치조인은 EntityGraph로 구현)")
         @Test
-        void find_all_override(){
+        void find_all_override() {
             Team teamA = new Team("teamA");
             Team teamB = new Team("teamB");
 
@@ -452,10 +452,10 @@ public class MemberRepositoryTest {
                 System.out.println("member.getTeam().getName() = " + member.getTeam().getName());
             }
         }
-        
+
         @DisplayName("JPQL + FetchJoin(EntityGraph)")
         @Test
-        void jpql_and_entity_graph(){
+        void jpql_and_entity_graph() {
             Team teamA = new Team("teamA");
             Team teamB = new Team("teamB");
 
@@ -480,10 +480,9 @@ public class MemberRepositoryTest {
             }
         }
 
-        
         @DisplayName("method 쿼리에 entitygraph 붙이기")
         @Test
-        void method_query_plus_entitygraph(){
+        void method_query_plus_entitygraph() {
             Team teamA = new Team("teamA");
             Team teamB = new Team("teamB");
 
@@ -510,7 +509,7 @@ public class MemberRepositoryTest {
 
         @DisplayName("NamedEntityGraph 사용")
         @Test
-        void named_entitygraph(){
+        void named_entitygraph() {
             Team teamA = new Team("teamA");
             Team teamB = new Team("teamB");
 
@@ -534,6 +533,49 @@ public class MemberRepositoryTest {
                 System.out.println("member.getTeam().getName() = " + member.getTeam().getName());
             }
         }
+    }
+
+    @DisplayName("queryHint Test")
+    @Nested
+    class QueryHint {
+        @DisplayName("변경 감지")
+        @Test
+        void queryHint() {
+            Member member = new Member("member1", 10);
+            memberRepository.save(member);
+            em.flush();
+            em.clear();
+
+            Member findMember = memberRepository.findById(member.getId()).get();
+            findMember.setUsername("member2");
+            em.flush();// 변경감지로 인해 업데이트 쿼리가 나감
+            /**
+             *     update
+             *         member
+             *     set
+             *         age=?,
+             *         team_id=?,
+             *         username=?
+             *     where
+             *         member_id=?
+             */
+        }
+
+        @DisplayName("변경 감지 필요 없어, 조회용으로만 쓸거야")
+        @Test
+        void queryHint2(){
+            // 나 100% 조회용으로만 쓸거야, 진짜
+            Member member = new Member("member1", 10);
+            memberRepository.save(member);
+            em.flush();
+            em.clear();
+
+            // Jpa 쿼리 힌트로 ReadOnly 속성을 줬기에 내부적으로 스냅샷을 뜨지 않음
+            Member findMember = memberRepository.findReadOnlyByUsername(member.getUsername());
+            findMember.setUsername("member2");
+            em.flush();// 내부적으로 스냅샷을 뜨지 않아서 업데이트 쿼리가 안 나감
+        }
+
     }
 
 }
