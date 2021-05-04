@@ -838,4 +838,49 @@ public class MemberRepositoryTest {
         }
     }
 
+    @DisplayName("네이티브쿼리 테스트")
+    @Test
+    void native_query_test() {
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("member1", 0, teamA);
+        Member m2 = new Member("member2", 2, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        Member member = memberRepository.findByNativeQuery("member1");
+        /**
+         * 실제 나간 쿼리
+         *         Member member = memberRepository.findByNativeQuery("member1");
+         */
+        assertEquals("member1", member.getUsername());
+        assertEquals(0, member.getAge());
+    }
+
+    @DisplayName("네이티브 프로젝션 테스트")
+    @Test
+    void native_projection_query_test() {
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("member1", 0, teamA);
+        Member m2 = new Member("member2", 2, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        Page<MemberProjection> result = memberRepository.findByNativeProjection(PageRequest.of(0, 10));
+        List<MemberProjection> content = result.getContent();
+        for (MemberProjection memberProjection : content) {
+            System.out.println("memberProjection.getUsername() = " + memberProjection.getUsername());
+            System.out.println("memberProjection.getTeamName() = " + memberProjection.getTeamName());
+        }
+    }
+
 }

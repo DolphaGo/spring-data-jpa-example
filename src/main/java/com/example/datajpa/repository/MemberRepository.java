@@ -131,4 +131,29 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
 
     // 쿼리는 동일한데, 가져오는 결과값(프로젝션 하는 값)이 다를 때 클래스를 넘겨주며 해결할 수 있다.
     <T> List<T> findGenericProjectionsByUsername(@Param("username") String username, Class<T> type); // 제네릭으로도 가능하다. username 조건으로 가져오고 싶은 데이터 형태를 지정할 때 타입만 넣어주면 된다.
+
+    // 네이티브 쿼리
+    @Query(value = "select * from member where username = ?", nativeQuery = true)
+    Member findByNativeQuery(String username);
+
+    /**
+     * 스프링 데이터 JPA 기반 네이티브 쿼리 페이징 지원
+     * 반환 타입 : Object[], Tuple, DTO(스프링 데이터 인터페이스 Projections 지원)
+     *
+     * > 제약
+     * Sort 파라미터를 통한 정렬이 정상 동작하지 않을 수 있음(믿지 말고 직접 처리)
+     * JPQL처럼 애플리케이션 로딩 시점에 문법 확인 불가
+     * 동적 쿼리 불가
+     *
+     * 네이티브 쿼리를 썼다는 것은, DTO로 가져오고 싶다는 경우가 많은데
+     * 문제는 반환 타입이 몇가지 지원이 안된다.
+     * 차라리 jdbcTemplate 또는 Mybatis로 엮어서 쓰는 것을 추천함.
+     */
+
+    // 근데 최근에 Projections가 들어왔음. 이게 네이티브 쿼리의 제약을 많이 해결해줌
+    @Query(value = "select m.member_id as id, m.username, t.name as teamName from member m left join team t",
+            countQuery = "select count(*) from member",
+            nativeQuery = true)
+    Page<MemberProjection> findByNativeProjection(Pageable pageable);
+
 }
