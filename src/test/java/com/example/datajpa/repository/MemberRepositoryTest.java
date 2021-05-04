@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -632,6 +634,84 @@ public class MemberRepositoryTest {
         List<Member> result = memberRepository.findAll(spec);
         assertEquals(1, result.size());
         // 실무에서는 Jpa Criteria를 거의 안쓴다! 대신 QueryDSL을 사용하자.
+    }
+
+    @DisplayName("Query Example")
+    @Test
+    void queryByExample() {
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("member1", 0, teamA);
+        Member m2 = new Member("member1", 2, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+//        memberRepository.findByUsername("member1"); // 이건 정적일 때만 쓸 수 있는 쿼리
+        // 동적일 땐 어떻게 할래?
+
+        Member member = new Member("member1"); // 도메인 객체 자체가 Example
+
+        // age와 같은 것은 무시해줘야 한다. matcher를 넣어주지 않으면 m1만 조회되지만, matcher로 age를 무시하면 findAll로 m2까지 같이 조회할 수 있다
+        ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("age");
+
+        Example<Member> example = Example.of(member, matcher); // spring-data에서 example을 파라미터로 받는 것을 기본으로 받을 수 있게 해줌
+
+        List<Member> result = memberRepository.findAll(example);
+
+        System.out.println(result.size());
+        assertEquals("member1", result.get(0).getUsername());
+        // 도메인 객체를 가지고, 그대로 검색 조건을 만드는 것
+        // 이 기술은 신박해보이지만, join이 말끔하지 않음, inner join만 가능하고 outer join이 안됨. 실무에서는 join이 안되면 도입할 수가 없음
+    }
+    
+    @DisplayName("Example이 좋은 것 같지만, 이너 조인밖에 안돼요 ㅠ")
+    @Test
+    void queryByExample_join_problem(){
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("member1", 0, teamA);
+        Member m2 = new Member("member1", 2, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        Member member = new Member("member1");
+        Team team = new Team("teamA");
+        member.setTeam(team);
+
+        ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("age");
+        Example<Member> example = Example.of(member, matcher);
+
+        List<Member> result = memberRepository.findAll(example);
+        /**
+         * @implNote : 날아가는 쿼리
+         *
+         *      select
+         *         member0_.member_id as member_i1_1_,
+         *         member0_.created_date as created_2_1_,
+         *         member0_.last_modified_date as last_mod3_1_,
+         *         member0_.created_by as created_4_1_,
+         *         member0_.last_modified_by as last_mod5_1_,
+         *         member0_.age as age6_1_,
+         *         member0_.team_id as team_id8_1_,
+         *         member0_.username as username7_1_
+         *     from
+         *         member member0_
+         *     inner join
+         *         team team1_
+         *             on member0_.team_id=team1_.team_id
+         *     where
+         *         team1_.name=?
+         *         and member0_.username=?
+         */
+
     }
 
 }
