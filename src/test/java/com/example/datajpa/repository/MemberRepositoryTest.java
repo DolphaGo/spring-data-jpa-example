@@ -667,10 +667,10 @@ public class MemberRepositoryTest {
         // 도메인 객체를 가지고, 그대로 검색 조건을 만드는 것
         // 이 기술은 신박해보이지만, join이 말끔하지 않음, inner join만 가능하고 outer join이 안됨. 실무에서는 join이 안되면 도입할 수가 없음
     }
-    
+
     @DisplayName("Example이 좋은 것 같지만, 이너 조인밖에 안돼요 ㅠ")
     @Test
-    void queryByExample_join_problem(){
+    void queryByExample_join_problem() {
         Team teamA = new Team("teamA");
         em.persist(teamA);
 
@@ -711,7 +711,131 @@ public class MemberRepositoryTest {
          *         team1_.name=?
          *         and member0_.username=?
          */
+    }
 
+    @DisplayName("Projections_interface")
+    @Test
+    void projection_interface_test() {
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("member1", 0, teamA);
+        Member m2 = new Member("member1", 2, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        List<UsernameOnly> result = memberRepository.findProjectionsByUsername("member1");
+        /**
+         * 다음과 같이 username만 정확하게 가져온다.
+         *   select
+         *         member0_.username as col_0_0_
+         *     from
+         *         member member0_
+         *     where
+         *         member0_.username=?
+         */
+        // 디버그를 찍어보면 확인할 수 있는데, 스프링 데이터 JPA에서 프록시로 가짜 객체를 받아오는 것이다.
+        // 인터페이스만 정의해놓으면 구현체는 스프링 데이터 JPA가 만들어서, 반환해주는 방식이다.
+        for (UsernameOnly usernameOnly : result) {
+            System.out.println("usernameOnly = " + usernameOnly.getUsername());
+        }
+    }
+
+    @DisplayName("Projections_class")
+    @Test
+    void projection_class_test() {
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("member1", 0, teamA);
+        Member m2 = new Member("member1", 2, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        List<UsernameOnlyDto> result = memberRepository.findClassProjectionsByUsername("member1");
+        /**
+         * 다음과 같이 username만 정확하게 가져온다.
+         *   select
+         *         member0_.username as col_0_0_
+         *     from
+         *         member member0_
+         *     where
+         *         member0_.username=?
+         */
+        // 디버그를 찍어보면 확인할 수 있는데, 스프링 데이터 JPA에서 프록시로 가짜 객체를 받아오는 것이다.
+        // 인터페이스만 정의해놓으면 구현체는 스프링 데이터 JPA가 만들어서, 반환해주는 방식이다.
+        for (UsernameOnlyDto usernameOnlyDto : result) {
+            System.out.println("usernameOnlyDto = " + usernameOnlyDto);
+        }
+    }
+
+    @DisplayName("Projections_generic")
+    @Test
+    void projection_generic_test() {
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("member1", 0, teamA);
+        Member m2 = new Member("member1", 2, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        List<UsernameOnlyDto> result = memberRepository.findGenericProjectionsByUsername("member1", UsernameOnlyDto.class);
+        /**
+         * 다음과 같이 username만 정확하게 가져온다.
+         *   select
+         *         member0_.username as col_0_0_
+         *     from
+         *         member member0_
+         *     where
+         *         member0_.username=?
+         */
+        // 디버그를 찍어보면 확인할 수 있는데, 스프링 데이터 JPA에서 프록시로 가짜 객체를 받아오는 것이다.
+        // 인터페이스만 정의해놓으면 구현체는 스프링 데이터 JPA가 만들어서, 반환해주는 방식이다.
+        for (UsernameOnlyDto usernameOnlyDto : result) {
+            System.out.println("usernameOnlyDto = " + usernameOnlyDto);
+        }
+    }
+
+    @DisplayName("Projections_nested")
+    @Test
+    void projection_nested_test() {
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("member1", 0, teamA);
+        Member m2 = new Member("member2", 2, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        List<NestedClosedProjections> result = memberRepository.findGenericProjectionsByUsername("member1", NestedClosedProjections.class);
+        /**
+         * 다음과 같이 username만 정확하게 가져온다.
+         *   select
+         *         member0_.username as col_0_0_
+         *     from
+         *         member member0_
+         *     where
+         *         member0_.username=?
+         */
+        // 디버그를 찍어보면 확인할 수 있는데, 스프링 데이터 JPA에서 프록시로 가짜 객체를 받아오는 것이다.
+        // 인터페이스만 정의해놓으면 구현체는 스프링 데이터 JPA가 만들어서, 반환해주는 방식이다.
+        for (NestedClosedProjections nestedClosedProjections : result) {
+            System.out.println("username = " + nestedClosedProjections.getUsername());
+            System.out.println("teamName = " + nestedClosedProjections.getTeam().getName());
+        }
     }
 
 }

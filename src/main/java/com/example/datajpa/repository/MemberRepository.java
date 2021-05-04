@@ -123,4 +123,12 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Member> findLockByUsername(@Param("username") String username);
+
+    List<UsernameOnly> findProjectionsByUsername(@Param("username") String username); // 반환값에 인터페이스를 넣으면 프록시로 값을 얻어올 수 있다. (Projections)
+
+    // 클래스로 하면 프록시가 필요 없을 것이다. 구체적인 클래스에 값을 매핑하는 방식이니!
+    List<UsernameOnlyDto> findClassProjectionsByUsername(@Param("username") String username); // 클래스 단위라면, 생성자를 만들 때 파라미터 명에 따라 결정된다.
+
+    // 쿼리는 동일한데, 가져오는 결과값(프로젝션 하는 값)이 다를 때 클래스를 넘겨주며 해결할 수 있다.
+    <T> List<T> findGenericProjectionsByUsername(@Param("username") String username, Class<T> type); // 제네릭으로도 가능하다. username 조건으로 가져오고 싶은 데이터 형태를 지정할 때 타입만 넣어주면 된다.
 }
