@@ -57,7 +57,7 @@ public class MemberController {
     // 또는 One-indexed-parameter 에 true를 준다. 이러면 0이나 1이나 동일한 결과를 내놓는데 한계가 있다.
     // 어떤 한계냐면 페이지 객체 안의 숫자랑 안맞는다(Pageable안의 pageNumber와 커스텀한 페이지 번호와 같지 않다.)
 
-    @PostConstruct
+//    @PostConstruct
     public void init() {
         for (int i = 0; i < 1000; i++) {
             memberRepository.save(new Member("user" + i, i));
