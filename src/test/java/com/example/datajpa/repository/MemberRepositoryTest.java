@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -603,14 +604,34 @@ public class MemberRepositoryTest {
         // 실시간 서비스에서는 락을 건다면 낙관락으로 풀어가는 방법을 추천한다.
     }
 
-
     @DisplayName("callCustom Repository")
     @Test
-    void callCustom(){ // querydsl을 쓸 때 커스텀 방식을 많이 사용합니다.
+    void callCustom() { // querydsl을 쓸 때 커스텀 방식을 많이 사용합니다.
         // 간단한 것은 DataJpa를 쓰는데, 복잡한 것은 querydsl을 사용해서, 이런 커스텀 방식을 많이 사용해요
         // 항상 사용자 정의 리포지토리가 필요한 것은 아님
         // 그러나, 핵심 레포지토리에서 사용해야 하는 쿼리 / DTO, 통계 등 쿼리, 복잡한 쿼리 등 는 구분합니다.
         // 영한님은 핵심 비즈니스 로직 / 특정 목적용 복잡한 쿼리 클래스를 아예 구분해서 사용하는 쿼리를 구분한다고 하십니다.
         List<Member> memberCustom = memberRepository.findMemberCustom();
     }
+
+    @DisplayName("criteria")
+    @Test
+    void specBasic() {
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("member1", 0, teamA);
+        Member m2 = new Member("member2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        Specification<Member> spec = MemberSpec.userName("member1").and(MemberSpec.teamName("teamA"));
+        List<Member> result = memberRepository.findAll(spec);
+        assertEquals(1, result.size());
+        // 실무에서는 Jpa Criteria를 거의 안쓴다! 대신 QueryDSL을 사용하자.
+    }
+
 }
